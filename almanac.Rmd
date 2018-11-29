@@ -1,0 +1,12 @@
+---
+title: "Region almanac"
+author: "Martijn Vellinger"
+date: "11/29/2018"
+output: 
+  html_document: 
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
