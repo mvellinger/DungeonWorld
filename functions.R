@@ -15,11 +15,14 @@ qsample <- function(x) {
 
 name_region <- function() {
   
-  require(feather)
+  terrain <- c("Bay", "Bluffs", "Bog", "Cliffs", "Desert", "Downs", "Dunes", "Expanse", "Fells", "Fen", "Flats", "Foothills", "Forest", "Groves", "Heath", "Heights", "Hills", "Hollows", "Jungle", "Lake", "Lowland", "March", "Marsh", "Meadows", "Moor", "Morass", "Mounds", "Mountains", "Peaks", "Plains", "Prairie", "Quagmire", "Range", "Reach", "Sands", "Savanna", "Scarps", "Sea", "Slough", "Sound", "Steppe", "Swamp", "Sweep", "Teeth", "Thicket", "Upland", "Wall", "Waste", "Wasteland", "Woods"
+  )
   
-  names_list <- read_feather("./data/region_names.feather")
-  names(names_list) <- c("terrain", "adjective", "noun")
+  adjective <- c("Ageless", "Ashen", "Black", "Blessed", "Blighted", "Blue", "Broken", "Burning", "Cold", "Cursed", "Dark", "Dead", "Deadly", "Deep", "Desolate", "Diamond", "Dim", "Dismal", "Dun", "Eerie", "Endless", "Fallen", "Far", "Fell", "Flaming", "Forgotten", "Forsaken", "Frozen", "Glittering", "Golden", "Green", "Grim", "Holy", "Impassable", "Jagged", "Light", "Long", "Misty", "Perilous", "Purple", "Red", "Savage", "Shadowy", "Shattered", "Shifting", "Shining", "Silver", "White", "Wicked", "Yellow")
   
+  noun <- c("[Name]*", "Ash", "Bone", "Darkness", "Dead", "Death", "Desolation", "Despair", "Devil", "Doom", "Dragon", "Fate", "Fear", "Fire", "Fury", "Ghost", "Giant", "God", "Gold", "Heaven", "Hell", "Honor", "Hope", "Horror", "King", "Life", "Light", "Lord", "Mist", "Peril", "Queen", "Rain", "Refuge", "Regret", "Savior", "Shadow", "Silver", "Skull", "Sky", "Smoke", "Snake", "Sorrow", "Storm", "Sun", "Thorn", "Thunder", "Traitor", "Troll", "Victory", "Witch")
+  
+  names_list <- data.frame(terrain, adjective, noun, stringsAsFactors = FALSE)
   roll <- sample(1:12, 1)
   
   if (roll %in% c(1:4)) {
@@ -88,6 +91,35 @@ name_place <- function() {
 # Subtables ---------------------------------------------------------------
 
 roll_details <- function(roll_table = "Oddity") {
+  
+  # acceptable inputs
+  tables_available <- c(
+    "Ability",
+    "Activity",
+    "Adjective",
+    "Age",
+    "Alignment",
+    "Aspect",
+    "Condition",
+    "Disposition",
+    "Element",
+    "Magic Type",
+    "No. Appearing",
+    "Oddity",
+    "Feature",
+    "Orientation",
+    "Ruination",
+    "Size",
+    "Tag",
+    "Terrain",
+    "Visibility"
+  )
+  
+  # input validation
+  if (!roll_table %in% tables_available) {
+    stop(paste("invalid roll_table:", roll_table))
+  }
+  
   if (roll_table == "Ability") {
     result <-  qsample(
       c(
@@ -155,25 +187,6 @@ roll_details <- function(roll_table = "Oddity") {
     )
     
     
-  }
-  
-  if (roll_table == "Activity") {
-    result <- qsample(
-      c(
-        "laying a trap/ambush",
-        "fighting/at war",
-        "prowling/on patrol",
-        "hunting/foraging",
-        "eating/resting",
-        "crafting/praying",
-        "traveling/relocating",
-        "exploring/lost",
-        "returning home",
-        "building/excavating",
-        "sleeping",
-        "dying"
-      )
-    )
   }
   
   if (roll_table == "Activity") {
@@ -358,8 +371,6 @@ roll_details <- function(roll_table = "Oddity") {
     )
   }
   
-  
-  
   if (roll_table == "Magic Type") {
     result <- qsample(
       c(
@@ -376,9 +387,9 @@ roll_details <- function(roll_table = "Oddity") {
   if (roll_table == "No. Appearing") {
     result <- qsample(
       c(
-        rep("Solitary (1)", 4),
+        rep("Solitary (1)", 5),
         rep(paste0("Group (", sample(1:6, 1)+2, ")" ), 5),
-        rep(paste0("Horde (", sum(sample(1:6, 4)), " per wave)" ), 3)
+        rep(paste0("Horde (", sum(sample(1:6, 4)), " per wave)" ), 2)
       )
     )
   }
@@ -714,30 +725,128 @@ roll_details <- function(roll_table = "Oddity") {
   
 }
 
-# Discovery ---------------------------------------------------------------
-
-make_creature <- function() {
-  creature_type <- qsample(
-    c(
-      rep("Beast", 4),
-      rep("Human", 2),
-      rep("Humanoid", 2),
-      rep("Monster", 4)
-    )
+roll_utility_item <- function() {
+  item <- c(
+    "key/lockpick",
+    "potion/food",
+    "clothing/cloak",
+    "decanter/vessel/cup",
+    "cage/box/coffer",
+    "instrument/toolbook/scroll",
+    "weapon/staff/wand",
+    "armor/shield/helm",
+    "mirror/hourglass",
+    "pet/mount",
+    "device/construct"
   )
   
-  if (creature_type == "Beast") {
-    creature_hint <- "Start with a real-world creature, then put a spin on it"
-    creature_category <- qsample(
+  return(qsample(item))
+}
+
+roll_art_item <- function() {
+  item <- c(
+    "trinket/charm",
+    "painting/pottery",
+    "ring/gloves",
+    "carpet/tapestry",
+    "statuette/idol",
+    "flag/banner",
+    "bracelet/armband",
+    "necklace/amulet",
+    "belt/harness",
+    "hat/mask",
+    "orb/sigil/rod",
+    "crown/scepter"
+  )
+  
+  return(qsample(item))
+}
+
+roll_treasure <- function(monster = "no") {
+  
+  if (class(monster) != "data.frame") {
+    loot_roll <- sample(1:6, 2, replace = TRUE)
+    if (loot_roll[1] == 6 & loot_roll[2] == 6) {
+      loot_roll <- sum(sample(1:6, 3, replace = TRUE))
+    }
+    loot_roll <- sum(min(loot_roll))
+    
+  }else{
+    
+    if ("damage_die" %in% names(monster)) {
+      loot_roll <- sample(1:monster$damage_die, 1)
+    }
+    if ("noteworthy" %in% names(monster)) {
+      if (monster$noteworthy == TRUE) {
+        loot_roll <- loot_roll + sample(1:4, 1)
+      }
+    }
+    
+  }
+  
+  loot <- c(
+    paste(sum(sample(1:8, 2, replace = TRUE)), "coins"),
+    "a useful item",
+    paste(sum(sample(1:10, 4, replace = TRUE)), "coins"),
+    paste("A small", roll_art_item(), "worth about", sum(sample(2:10, 2, replace = TRUE))*10, "coins"),
+    paste("A", ifelse(sum(sample(1:6, 2, replace = TRUE)) > 8, 
+                      roll_utility_item(), 
+                      roll_art_item()), 
+          "imbued with minor powers of", 
+          ifelse(sample(1:2,1) == 1, 
+                 roll_details("Magic Type"), 
+                 roll_details("Ability"))),
+    "a useful clue (map, note, etc)",
+    paste("A bag of", sample(1:4,1, replace = TRUE)*100 ,"coins (1 weight per 100)"),
+    paste0("A small ", roll_art_item(), " of great value (", sum(sample(1:6, 2, replace = TRUE))*100, " coins, 0 weight)"),
+    paste("A chest of coins and other small valuables.", paste0("(", sum(sample(1:6, 3, replace = TRUE)) * 100), "coins, 1 weight)"),
+    paste("A", ifelse(sum(sample(1:6, 2, replace = TRUE)) > 8, 
+                      roll_utility_item(), 
+                      roll_art_item()), 
+          "imbued with the power of", 
+          ifelse(sample(1:2, 1, replace = TRUE) == 1, 
+                 roll_details("Magic Type"), 
+                 roll_details("Ability"))),
+    paste("Many small bags of coins,", sum(sample(1:4, 2, replace = TRUE))*100, "coins or so"),
+    paste(paste0("Crown/banner of an ", roll_npc_occupation("Official")), "worth at least", sum(sample(1:4,3))*100, "coins"),
+    paste("A large and ornate", roll_art_item(), paste0("(", sum(sample(1:4, 4, replace = TRUE))*100, " coins, 1 weight)")),
+    paste("A unique", ifelse(sum(sample(1:6, 2, replace = TRUE)) > 8, 
+                             roll_utility_item(), 
+                             roll_art_item()), "worth at least", sum(sample(1:4, 5, replace = TRUE))*100, "coins"))
+  
+  loot_and_reroll <- c(
+    paste("Everything you need to learn a new spell, and", tolower(qsample(loot))),
+    paste("A portal or a secret path (or directions to one), and", tolower(qsample(loot))),
+    paste("Something relating to one of the characters, and", tolower(qsample(loot))),
+    paste("A hoard:", sample(1:10,1)*1000, 
+          "coins, and", sample(1:10,1)*10, 
+          "gems worth", sum(sample(1:6, 2, replace = TRUE)), "coins each")
+  )
+  
+  if (loot_roll < 15) {
+    return(qsample(loot))
+  }else{
+    return(qsample(loot_and_reroll))
+  }
+  
+}
+# Creature generation -----------------------------------------------------
+
+
+roll_were_creature <- function() {
+  were_creature_type <- "Beast"
+  
+  if (were_creature_type == "Beast") {
+    were_creature_category <- qsample(
       c(
         rep("Earthbound", 7),
         rep("Airborne", 3),
-        rep("Water-going", 2)
+        rep("Aquatic", 2)
       )
     )
     
-    if (creature_category == "Earthbound") {
-      creature_specific <- qsample(
+    if (were_creature_category == "Earthbound") {
+      were_creature_specific <- qsample(
         c(
           "termite/tick/louse",
           "snail/slug/worm",
@@ -755,8 +864,8 @@ make_creature <- function() {
       )
     }
     
-    if (creature_category == "Airborne") {
-      creature_specific <- qsample(
+    if (were_creature_category == "Airborne") {
+      were_creature_specific <- qsample(
         c(
           "mosquito/firefly",
           "locust/dragonfly/moth",
@@ -774,8 +883,8 @@ make_creature <- function() {
       )
     }
     
-    if (creature_category == "Water-going") {
-      creature_specific <- qsample(
+    if (were_creature_category == "Aquatic") {
+      were_creature_specific <- qsample(
         c(
           "insect ",
           "jelly/anemone",
@@ -792,17 +901,105 @@ make_creature <- function() {
         )
       )
     }
+  }
+  return(were_creature_specific)
+}
+
+roll_beast <- function(creature_category = "random") {
+  
+  if (creature_category == "random") {
     
-    creature_additional_details <- paste(
-      roll_details("Activity"),
-      roll_details("Disposition"),
-      roll_details("No. Appearing"),
-      roll_details("Size"), sep = ", "
+    creature_category <- qsample(
+      c(
+        rep("Earthbound", 7),
+        rep("Airborne", 3),
+        rep("Aquatic", 2)
+      )
     )
   }
   
-  if (creature_type == "Humanoid") {
-    creature_hint <- "If you roll a classic fantasy species, adapt it to your setting"
+  if (!creature_category %in% c("Earthbound", "Airborne", "Aquatic") ) {
+    stop(paste("invalid creature category:", creature_category))
+  }
+  
+  if (creature_category == "Earthbound") {
+    creature_specific <- qsample(
+      c(
+        "termite/tick/louse",
+        "snail/slug/worm",
+        "ant/centipede/scorpion",
+        "snake/lizard",
+        "vole/rat/weasel",
+        "boar/pig",
+        "dog/fox/wolf",
+        "cat/lion/panther",
+        "deer/horse/camel",
+        "ox/rhino",
+        "bear/ape/gorilla",
+        "mammoth/dinosaur"
+      )
+    )
+  }
+  
+  if (creature_category == "Airborne") {
+    creature_specific <- qsample(
+      c(
+        "mosquito/firefly",
+        "locust/dragonfly/moth",
+        "bee/wasp",
+        "chicken/duck/goose",
+        "songbird/parrot",
+        "gull/waterbird",
+        "heron/crane/stork",
+        "crow/raven",
+        "hawk/falcon",
+        "eagle/owl",
+        "condor",
+        "pteranodon"
+      )
+    )
+  }
+  
+  if (creature_category == "Aquatic") {
+    creature_specific <- qsample(
+      c(
+        "insect ",
+        "jelly/anemone",
+        "clam/oyster/snail",
+        "eel/snake",
+        "frog/toad",
+        "fish",
+        "crab/lobster",
+        "turtle",
+        "alligator/crocodile",
+        "dolphin/shark",
+        "squid/octopus",
+        "whale"
+      )
+    )
+  }
+  
+  creature_additional_details <- list(
+    "Activity" = roll_details("Activity"),
+    "Disposition" = roll_details("Disposition"),
+    "No. Appearing" = roll_details("No. Appearing"),
+    "Size" = roll_details("Size")
+  )
+  
+  
+  return(
+    list(
+      "type"     = "Beast",
+      "category" = creature_category,
+      "specific" = creature_specific,
+      "details"  = creature_additional_details
+    )
+  )
+}
+
+roll_humanoid <- function(creature_category = "random") {
+  
+  if (creature_category == "random") {
     creature_category <- qsample(
       c(
         rep("Common", 7),
@@ -810,144 +1007,88 @@ make_creature <- function() {
         rep("Hybrid", 2)
       )
     )
-    
-    if (creature_category == "Common") {
-      creature_specific <- qsample(
-        c(
-          rep("Halfling (Small)", 3),
-          rep("goblin/kobold (Small)", 2),
-          rep("dwarf/gnome (Small)", 2),
-          rep("orc/hobgoblin/gnoll", 2),
-          rep("half-elf, half-orc, etc", 2),
-          "elf"
-        )
-      )
-    }
-    
-    if (creature_category == "Uncommon") {
-      creature_specific <- qsample(
-        c(
-          "fey (Tiny)",
-          rep("catfolk/dogfolk", 2),
-          rep("lizardfolk/merfolk", 2),
-          "birdfolk",
-          rep("ogre/troll (Large)", 3),
-          rep("cyclops/giant", 2)
-        )
-      )
-    }
-    
-    ww_creature <- function() {
-      ww_creature_type <- "Beast"
-      
-      if (ww_creature_type == "Beast") {
-        ww_creature_hint <- "Start with a real-world creature, then put a spin on it"
-        ww_creature_category <- qsample(
-          c(
-            rep("Earthbound", 7),
-            rep("Airborne", 3),
-            rep("Water-going", 2)
-          )
-        )
-        
-        if (ww_creature_category == "Earthbound") {
-          ww_creature_specific <- qsample(
-            c(
-              "termite/tick/louse",
-              "snail/slug/worm",
-              "ant/centipede/scorpion",
-              "snake/lizard",
-              "vole/rat/weasel",
-              "boar/pig",
-              "dog/fox/wolf",
-              "cat/lion/panther",
-              "deer/horse/camel",
-              "ox/rhino",
-              "bear/ape/gorilla",
-              "mammoth/dinosaur"
-            )
-          )
-        }
-        
-        if (ww_creature_category == "Airborne") {
-          ww_creature_specific <- qsample(
-            c(
-              "mosquito/firefly",
-              "locust/dragonfly/moth",
-              "bee/wasp",
-              "chicken/duck/goose",
-              "songbird/parrot",
-              "gull/waterbird",
-              "heron/crane/stork",
-              "crow/raven",
-              "hawk/falcon",
-              "eagle/owl",
-              "condor",
-              "pteranodon"
-            )
-          )
-        }
-        
-        if (ww_creature_category == "Water-going") {
-          ww_creature_specific <- qsample(
-            c(
-              "insect ",
-              "jelly/anemone",
-              "clam/oyster/snail",
-              "eel/snake",
-              "frog/toad",
-              "fish",
-              "crab/lobster",
-              "turtle",
-              "alligator/crocodile",
-              "dolphin/shark",
-              "squid/octopus",
-              "whale"
-            )
-          )
-        }
-      }
-      return(ww_creature_specific)
-    }
-    
-    
-    if (creature_category == "Hybrid") {
-      creature_specific <- qsample(
-        c(
-          rep("centaur", 2),
-          rep("werewolf/werebear", 3),
-          paste0("werecreature (human/", ww_creature()),
-          rep(paste("human with", ww_creature()),3),
-          rep(paste("human with two", paste0(ww_creature(), "s")),2)
-        )
-      )
-    }
-    
-    creature_additional_details <- paste(
-      roll_details("Activity"),
-      roll_details("Alignment"),
-      roll_details("Disposition"),
-      roll_details("No. Appearing")
-      #TODO roll_npc_details()
-      , sep = ", ")
   }
   
-  if (creature_type == "Human") {
-    creature_hint <- "Humans, the most dangerous beasts."
-    creature_category <- roll_details("Age")
-    creature_specific <- roll_details("Ability")
-    creature_additional_details <- paste(
-      roll_details("Activity"),
-      roll_details("Alignment"),
-      roll_details("Disposition"),
-      roll_details("No. Appearing")
-      #TODO roll_npc_details()
-      , sep = ", ")
-    
+  if (creature_category == "Common") {
+    creature_specific <- qsample(
+      c(
+        rep("Halfling (Small)", 3),
+        rep("goblin/kobold (Small)", 2),
+        rep("dwarf/gnome (Small)", 2),
+        rep("orc/hobgoblin/gnoll", 2),
+        rep("half-elf, half-orc, etc", 2),
+        "elf"
+      )
+    )
   }
   
-  if (creature_type == "Monster") {
-    creature_hint <- "Give every monster life!"
+  if (creature_category == "Uncommon") {
+    creature_specific <- qsample(
+      c(
+        "fey (Tiny)",
+        rep("catfolk/dogfolk", 2),
+        rep("lizardfolk/merfolk", 2),
+        "birdfolk",
+        rep("ogre/troll (Large)", 3),
+        rep("cyclops/giant", 2)
+      )
+    )
+  }
+  
+  
+  
+  
+  if (creature_category == "Hybrid") {
+    creature_specific <- qsample(
+      c(
+        rep("centaur", 2),
+        rep("werewolf/werebear", 3),
+        paste0("werecreature (human/", roll_were_creature()),
+        rep(paste("human with", roll_were_creature()),3),
+        rep(paste("human with two", paste0(roll_were_creature(), "s")),2)
+      )
+    )
+  }
+  
+  creature_additional_details <- c(
+    roll_npc(),
+    list(
+      "Disposition" = roll_details("Disposition"),
+      "No. Appearing" = roll_details("No. Appearing"))
+  )
+  
+  return(
+    list(
+      "type"     = "Humanoid",
+      "category" = creature_category,
+      "specific" = creature_specific,
+      "details"  = creature_additional_details
+    )
+  )
+}
+
+roll_human <- function() {
+  creature_category <- roll_details("Age")
+  creature_specific <- roll_details("Ability")
+  creature_additional_details <- c(
+    roll_npc(),
+    list("Disposition" = roll_details("Disposition"),
+         "No. Appearing" = roll_details("No. Appearing"))
+  )
+  
+  return(
+    list(
+      "type"     = "Human",
+      "category" = creature_category,
+      "specific" = creature_specific,
+      "details"  = creature_additional_details
+    )
+  )
+}
+
+roll_monster <- function(creature_category = "random") {
+  
+  if (creature_category == "random") {
     creature_category <- qsample(
       c(
         rep("Unusual", 7),
@@ -955,200 +1096,785 @@ make_creature <- function() {
         rep("Legendary", 2)
       )
     )
-    
-    if (creature_category == "Unusual") {
-      creature_specific <- qsample(
-        c(
-          rep("plant/fungus", 3),
-          rep("Undead Human", 2),
-          rep("Undead Humanoid", 1),
-          rep(paste(ww_creature(), "+", ww_creature()), 2),
-          rep(paste(ww_creature(), "that can", roll_details("Ability")), 2),
-          rep(paste0(ww_creature(), " (", roll_details("Feature"), ")"), 2)
-        )
+  }
+  
+  if (!creature_category %in% c("Unusual", "Rare", "Legendary")) {
+    stop(paste("invalid creature category:", creature_category))
+  }
+  
+  if (creature_category == "Unusual") {
+    creature_specific <- qsample(
+      c(
+        rep("plant/fungus", 3),
+        rep("Undead Human", 2),
+        rep("Undead Humanoid", 1),
+        rep(paste(roll_were_creature(), "+", roll_were_creature()), 2),
+        rep(paste(roll_were_creature(), "that can", roll_details("Ability")), 2),
+        rep(paste0(roll_were_creature(), " (", roll_details("Feature"), ")"), 2)
       )
-    }
-    
-    if (creature_category == "Rare") {
-      creature_specific <- qsample(
-        c(
-          rep("slime/ooze (Amorphous)", 3),
-          rep("creation (Construct)", 3),
-          rep(paste(roll_details("Oddity"), ww_creature()), 3)
-          #TODO:unnatural entity
-          
-        )
-      )
-    }
-    
-    if (creature_category == "Legendary") {
-      creature_specific <- qsample(
-        c(
-         rep("dragon/colossus (Huge)", 3),
-         rep(paste(qsample(
-           c(
-             rep("plant/fungus", 3),
-             rep("Undead Human", 2),
-             rep("Undead Humanoid", 1),
-             rep(paste(ww_creature(), "+", ww_creature()), 2),
-             rep(paste(ww_creature(), "that can", roll_details("Ability")), 2),
-             rep(paste0(ww_creature(), " (", roll_details("Feature"), ")"), 2)
-           )
-         ), "(Huge)"), 2),
-         rep(paste(qsample(
-           c(
-             rep("slime/ooze (Amorphous)", 3),
-             rep("creation (Construct)", 3),
-             rep(paste(roll_details("Oddity"), ww_creature()), 3)
-             #TODO:unnatural entity
-             
-           )
-         ), "(Huge)"), 2),
-         rep(paste0(ww_creature(), "-dragon" ), 1),
-         paste0(qsample(
-           c(
-             rep("plant/fungus", 3),
-             rep("Undead Human", 2),
-             rep("Undead Humanoid", 1),
-             rep(paste(ww_creature(), "+", ww_creature()), 2),
-             rep(paste(ww_creature(), "that can", roll_details("Ability")), 2),
-             rep(paste0(ww_creature(), " (", roll_details("Feature"), ")"), 2)
-           )
-         ), " with a Dragon"),
-         paste0(qsample(
-           c(
-             rep("slime/ooze (Amorphous)", 3),
-             rep("creation (Construct)", 3),
-             rep(paste(roll_details("Oddity"), ww_creature()), 3)
-             #TODO:unnatural entity
-             
-           )
-         ), " with a Dragon")
-        )
-      )
-    }
-    
-    creature_additional_details <- paste(
-      roll_details("Activity"),
-      roll_details("Alignment"),
-      roll_details("Disposition"),
-      roll_details("No. Appearing"),
-      roll_details("Size"),
-      "\nOptionally:\n",
-      roll_details("Ability"),
-      roll_details("Adjective"), 
-      roll_details("Age"),
-      roll_details("Aspect"),
-      roll_details("Condition"),
-      roll_details("Feature"),
-      roll_details("Tags"),
-      sep = ", "
     )
   }
   
+  if (creature_category == "Rare") {
+    creature_specific <- qsample(
+      c(
+        rep("slime/ooze (Amorphous)", 3),
+        rep("creation (Construct)", 3),
+        rep(paste(roll_details("Oddity"), roll_were_creature()), 3)
+        #TODO:unnatural entity
+        
+      )
+    )
+  }
+  
+  if (creature_category == "Legendary") {
+    creature_specific <- qsample(
+      c(
+        rep("dragon/colossus (Huge)", 3),
+        rep(paste(qsample(
+          c(
+            rep("plant/fungus", 3),
+            rep("Undead Human", 2),
+            rep("Undead Humanoid", 1),
+            rep(paste(roll_were_creature(), "+", roll_were_creature()), 2),
+            rep(paste(roll_were_creature(), "that can", roll_details("Ability")), 2),
+            rep(paste0(roll_were_creature(), " (", roll_details("Feature"), ")"), 2)
+          )
+        ), "(Huge)"), 2),
+        rep(paste(qsample(
+          c(
+            rep("slime/ooze (Amorphous)", 3),
+            rep("creation (Construct)", 3),
+            rep(paste(roll_details("Oddity"), roll_were_creature()), 3)
+            #TODO:unnatural entity
+            
+          )
+        ), "(Huge)"), 2),
+        rep(paste0(roll_were_creature(), "-dragon" ), 1),
+        paste0(qsample(
+          c(
+            rep("plant/fungus", 3),
+            rep("Undead Human", 2),
+            rep("Undead Humanoid", 1),
+            rep(paste(roll_were_creature(), "+", roll_were_creature()), 2),
+            rep(paste(roll_were_creature(), "that can", roll_details("Ability")), 2),
+            rep(paste0(roll_were_creature(), " (", roll_details("Feature"), ")"), 2)
+          )
+        ), " + Dragon"),
+        paste0(qsample(
+          c(
+            rep("slime/ooze (Amorphous)", 3),
+            rep("creation (Construct)", 3),
+            rep(paste(roll_details("Oddity"), roll_were_creature()), 3)
+            #TODO:unnatural entity
+            
+          )
+        ), " with a Dragon")
+      )
+    )
+  }
+  
+  creature_additional_details <- list(
+    "Activity" = roll_details("Activity"),
+    "Alignment" = roll_details("Alignment"),
+    "No. Appearing" = roll_details("No. Appearing"), 
+    "Disposition" = roll_details("Disposition"),
+    "Size" = roll_details("Size"),
+    "Optional attributes:" = list(
+      "Ability" = roll_details("Ability"),
+      "Adjective" = roll_details("Adjective"),
+      "Age" = roll_details("Age"),
+      "Aspect" = roll_details("Aspect"),
+      "Condition" = roll_details("Condition"),
+      "Feature" = roll_details("Feature"),
+      "Tag" = roll_details("Tag")
+    )
+  )
+  
   return(
     list(
-      creature_type,
-      creature_hint,
-      creature_category,
-      creature_specific,
-      creature_additional_details
+      "type"     = "Humanoid",
+      "category" = creature_category,
+      "specific" = creature_specific,
+      "details"  = creature_additional_details
+    )
+  )
+}
+
+roll_creature <- function(creature_type = "random") {
+  
+  if (creature_type == "random") {
+    creature_type <- qsample(
+      c(
+        rep("Beast", 4),
+        rep("Human", 2),
+        rep("Humanoid", 2),
+        rep("Monster", 4)
+      )
+    )
+  }
+  
+  if (!creature_type %in% c("Beast", "Humanoid", "Human", "Monster")) {
+    stop(paste("invalid creature type:", creature_type))
+  }
+  
+  if (creature_type == "Beast") {
+    creature_temp <- roll_beast(creature_category = "random")
+  }
+  
+  
+  if (creature_type == "Humanoid") {
+    creature_temp <- roll_humanoid(creature_category = "random")
+  }
+  
+  if (creature_type == "Human") {
+    creature_temp <- roll_human()
+  }
+  
+  if (creature_type == "Monster") {
+    creature_temp <- roll_monster()
+    
+  }
+  
+  return(
+    creature_temp
+  )
+  
+}
+
+
+roll_npc_occupation <- function(occupation_type = NA) {
+  if (is.na(occupation_type)) {
+    occupation_type <- qsample(
+      c(
+        "Criminal",
+        rep("Commoner", 5),
+        rep("Tradesman", 2),
+        rep("Merchant", 2),
+        "Specialist",
+        "Official"
+      )
+    )
+  }
+  
+  if (occupation_type == "Criminal") {
+    occupation <- qsample(
+      c(
+        "bandit/brigand/thug",
+        "bandit/brigand/thug",
+        "thief",
+        "thief",
+        "bodyguard/tough",
+        "bodyguard/tough",
+        "burglar",
+        "burglar",
+        "dealer/fence",
+        "racketeer",
+        "lieutenant",
+        "boss"
+      )
+    )
+  }
+  
+  if (occupation_type == "Commoner") {
+    occupation <- qsample(
+      c(
+        "housewife/husband",
+        "hunter/gatherer",
+        "hunter/gatherer",
+        "farmer/herder",
+        "farmer/herder",
+        "farmer/herder",
+        "laborer/servant",
+        "laborer/servant",
+        "driver/porter/guide",
+        "sailor/soldier/guard",
+        "clergy/monk",
+        "apprentice/adventurer"
+      )
+    )
+  }
+  
+  if (occupation_type == "Tradesperson") {
+    occupation <- qsample(
+      c(
+        "cobbler/furrier/tailor",
+        "weaver/basketmaker",
+        "potter/carpenter",
+        "mason/baker/chandler",
+        "cooper/wheelright",
+        "tanner/ropemaker",
+        "smith/tinker",
+        "stablekeeper/herbalist",
+        "vintner/jeweler",
+        "innkeeper/tavernkeeper",
+        "artist/actor/minstrel",
+        "armorer/weaponsmith"
+      )
+    )
+  }
+  
+  if (occupation_type == "Merchant") {
+    occupation <- qsample(
+      c(
+        "general goods/outfitter",
+        "general goods/outfitter",
+        "general goods/outfitter",
+        "raw materials",
+        "grain/livestock",
+        "ale/wine/spirits",
+        "clothing/jewelry",
+        "weapons/armor",
+        "spices/tobacco",
+        "labor/slaves",
+        "books/scrolls",
+        "magic supplies/items"
+      )
+    )
+  }
+  
+  if (occupation_type == "Specialist") {
+    occupation <- qsample(
+      c(
+        "undertaker",
+        "sage/scholar/wizard",
+        "writer/illuminator",
+        "perfumer",
+        "architect/engineer",
+        "locksmith/clockmaker",
+        "physician/apothecary",
+        "navigator/guide",
+        "alchemist/astrologer",
+        "spy/diplomat",
+        "cartographer",
+        "inventor"
+      )
+    )
+  }
+  
+  if(occupation_type == "Official") {
+    occupation <- qsample(
+      c(
+        "town crier",
+        "tax collector",
+        "armiger/gentry",
+        "armiger/gentry",
+        "reeve/sherrif/constable",
+        "mayor/magistrate",
+        "priest/bishop/abbot",
+        "guildmaster",
+        "knight/templar",
+        "elder/high priest",
+        "noble (baron etc.)",
+        "lord/lady/king/queen"
+      )
+    )
+  }
+  
+  return(paste0(tolower(occupation_type), ": ", occupation))
+}
+
+roll_npc_trait <- function(trait_category = "random") {
+  
+  if (trait_category == "random") {
+    trait_category <- qsample(
+      c(
+        rep("Physical Appearance", 6),
+        rep("Personality", 3),
+        rep("Quirk", 2)
+      )
+    )
+  }
+  
+  if (!trait_category %in% c("Physical Appearance", "Personality", "Quirk")) {
+    stop(paste("Invalid trait category:", trait_category))
+  }
+  
+  if (trait_category == "Physical Appearance" ) {
+    trait <- qsample(
+      c(
+        "disfigured (missing teeth, eye, etc.)",
+        "lasting injury (bad leg, arm, etc.)",
+        "tattooed/pockmarked/scarred",
+        "unkempt/shabby/grubby",
+        "big/thick/brawny",
+        "small/scrawny/emaciated",
+        "notable hair (wild, long, none, etc.)",
+        "notable nose (big, hooked, etc.)",
+        "notable eyes (blue, bloodshot, etc.)",
+        "clean/well-dressed/well-groomed",
+        "clean/well-dressed/well-groomed",
+        "attractive/handsome/stunning"
+      )
+    )
+  }
+  
+  if (trait_category == "Personality") {
+    trait <- qsample(
+      c(
+        "loner/alienated/antisocial ",
+        "cruel/belligerent/bully",
+        "anxious/fearful/cowardly",
+        "envious/covetous/greedy",
+        "aloof/haughty/arrogant",
+        "awkward/shy/self-loathing",
+        "orderly/compulsive/controlling",
+        "confident/impulsive/reckless ",
+        "kind/generous/compassionate",
+        "easygoing/relaxed/peaceful",
+        "easygoing/relaxed/peaceful",
+        "cheerful/happy/optimistic"
+      )
+    )
+  }
+  
+  if (trait_category == "Quirk") {
+    trait <- qsample(
+      c(
+        "insecure/racist/xenophobic",
+        "addict (sweets, drugs, sex, etc.)",
+        "phobia (spiders, fire, darkness, etc.)",
+        "allergic/asthmatic/chronically ill ",
+        "skeptic/paranoid",
+        "superstitious/devout/fanatical",
+        "miser/pack-rat",
+        "spendthrift/wastrel",
+        "smart aleck/know-it-all",
+        "artistic/dreamer/delusional",
+        "naive/idealistic"
+      )
+    )
+  }
+  
+  return(paste0(trait_category, ": ", trait))
+}
+
+roll_npc <- function(context = "random") {
+  
+  if (context == "random") {
+    qsample(
+      c("Wilderness", "Rural", "Urban")
+    )
+  }
+  if (context == "Wilderness") {
+    npc_type <- qsample(
+      c(
+        roll_npc_occupation("Criminal"),
+        roll_npc_occupation("Criminal"),
+        "adventurer/explorer",
+        "adventurer/explorer",
+        "hunter/gatherer",
+        "hunter/gatherer",
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        "ranger/scout",
+        "ranger/scout",
+        "soldier/mercenary",
+        roll_npc_occupation("Official")
+      )
+    )
+    
+    npc_trait <- roll_npc_trait()
+    npc_activity <- roll_details("Activity")
+    npc_alignment <- roll_details("Alignment")
+    
+  }
+  
+  if (context == "Rural") {
+    npc_type <- qsample(
+      c(
+        "beggar/urching",
+        roll_npc_occupation("Criminal"),
+        "adventurer/explorer",
+        "hunter/gatherer",
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Tradesperson"),
+        roll_npc_occupation("Merchant"),
+        "militia/soldier/guard",
+        roll_npc_occupation("Official")
+      )
+    )
+  }
+  
+  if (context == "Urban") {
+    npc_type <- qsample(
+      c(
+        "beggar/urchin",
+        "beggar/urching",
+        roll_npc_occupation("Criminal"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Commoner"),
+        roll_npc_occupation("Tradesperson"),
+        roll_npc_occupation("Merchant"),
+        roll_npc_occupation("Specialist"),
+        "militia/soldier/guard",
+        roll_npc_occupation("Official"),
+      )
+    )
+    
+  }
+  
+  
+  return(
+    list(
+      "NPC"       = npc_type, 
+      "Alignment" = npc_alignment, 
+      "Trait"     = npc_trait, 
+      "Activity"  = npc_activity   
+    )
+    
+  )
+}
+
+
+# Discovery generation ----------------------------------------------------
+roll_feature_template <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c()
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes
+  
+  
+  # end subtypes  
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
     )
   )
   
 }
 
-make_discovery <- function() {
+
+roll_unnatural_feature <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Arcane", 9),
+    rep("Planar", 2),
+    "Divine"
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes start
+  if (subtype_found == "Arcane") {
+    core_feature <- qsample(
+      c(
+        rep("residue",             2),
+        rep("blight",              3),
+        rep("alteration/mutation", 2),
+        rep("enchantment",         2),
+        rep("source/repository",   2)
+      ) 
+    )
+    
+    bonus_features <- list("Alignment"  = roll_details("Alignment"), 
+                           "Magic type" = roll_details("Magic Type"))
+  }
+  
+  if (subtype_found == "Planar") {
+    core_feature <- qsample(
+      c(
+        rep("distortion/warp", 4),
+        rep("portal/gate",     4),
+        rep("rift/tear",       2),
+        rep("outpost",         2)
+      ) 
+    )
+    
+    bonus_features <- list("Alignment" = roll_details("Alignment"), 
+                           "Element"   = roll_details("Element"))
+  }
+  
+  if (subtype_found == "Divine") {
+    core_feature <- qsample(
+      c(
+        rep("mark/sign",      3),
+        rep("cursed place",   3),
+        rep("hallowed place", 3),
+        rep("watched place",  2),
+        rep("presence"),
+      ) 
+    )
+    
+    bonus_features <- list("Alignment" = roll_details("Alignment"), 
+                           "Aspect"    = roll_details("Aspect"))
+  }
+  # subtypes end
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+}
+
+roll_natural_feature <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Lair",           2),
+    rep("Obstacle",       2),
+    rep("Terrain Change", 3),
+    rep("Water Feature",  2),
+    rep("Landmark",       2),
+    rep("Resource",       1)
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes start
+  
+  if (subtype_found == "Lair") {
+    core_feature <- qsample(
+      c(
+        rep("burrow",       3),
+        rep("cave/tunnels", 4),
+        rep("nest/aerie",   2),
+        rep("hive",         1),
+        rep("ruins",        2)
+      )
+    )
+    
+    if (core_feature == "ruins") {
+      # Ruins generate their own creature, so we don't need to add it here.
+      bonus_features <- list(
+        "Visibility" = roll_details("Visibility"),
+        "Structure"  = roll_structure("Ruin")
+      )
+    }else{
+      bonus_features <- list(
+        "Visibility" = roll_details("Visibility"),
+        "Creature"   = roll_creature()
+      )
+    }
+    
+    if (subtype_found == "Obstacle") {
+      core_feature <- qsample(
+        c(
+          rep("difficult ground",     5),
+          rep("cliff/crevasse/chasm", 3),
+          rep("ravine/gorge",         2),
+          rep(roll_details("Oddity"), 2)
+        )
+      )
+      
+      bonus_features <- list(
+        "Optional A" = roll_details("Oddity"),
+        "Optional B" = roll_details("Ruination")
+      )
+    }
+    
+  }
+  
+  if (subtype_found == "Terrain Change") {
+    core_feature <- qsample(
+      c(
+        rep(paste("limited area:", roll_details("Terrain")), 4),
+        rep("crevice/hole/pit/cave", 2),
+        rep("altitude change",       2),
+        rep("canyon/valley",         2),
+        rep("rise/peak in distance", 2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Optional A" = roll_details("Oddity"),
+      "Optional B" = roll_details("Terrain")
+    )
+  }
+  
+  if (subtype_found == "Water Feature") {
+    core_feature <- qsample(
+      c(
+        rep("spring/hotspring",   1),
+        rep("waterfall/geyser",   1),
+        rep("creek/stream/brook", 4),
+        rep("pond/lake",          2),
+        rep("river",              2),
+        rep("sea/ocean",          2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Optional A" = roll_beast("Aquatic"),
+      "Optional B" = roll_details("Oddity")
+    )
+  }
+  
+  if (subtype_found == "Landmark") {
+    #TODO
+  }
+  
+  if (subtype_found == "Resource") {
+    #TODO
+  }
+  # subtypes end 
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+  
+}
+
+roll_evidence_feature <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Tracks/Spoor",   6),
+    rep("Remains/Debris", 4),
+    rep("Stash/Cache",    2)
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes
+  if (subtype_found == "Tracks/Spoor") {
+    core_feature <- qsample(
+      c(
+        rep("faint/unclear",        3),
+        rep("definite/clear",       3),
+        rep("multiple",             2),
+        rep("signs of violence",    2),
+        rep("trail of blood/other", 2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Age"                  = roll_details("Age"),
+      "Creature responsible" = roll_creature()
+    )
+  }
+  
+  if (subtype_found == "Remains/Debris") {
+    core_feature <- qsample(
+      c(
+        rep("bones",               4),
+        rep("corpse/carcass",      3),
+        rep("site of violence",    1),
+        rep("junk/refuse",         1),
+        rep("lost supplies/cargo", 1),
+        rep("tools/weapons/armor", 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Age"        = roll_details("Age"),
+      "Visibility" = roll_details("Visibility")
+    )
+  }
+  
+  if (subtype_found == "Stash/Cache") {
+    core_feature <- qsample(
+      c(
+        rep("trinkets/coins",      3),
+        rep("tools/weapons/armor", 2),
+        rep("map",                 2),
+        rep("food/supplies",       2),
+        rep(roll_treasure(),       2)
+      )
+    )
+  }
+  
+  # end subtypes  
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+  
+}
+
+roll_discovery <- function() {
   discovery_types <- c(
-    "Unnatural Feature",
-    "Natural Feature",
-    "Natural Feature",
-    "Natural Feature",
-    "Evidence",
-    "Evidence",
-    "Creature",
-    "Creature",
-    "Structure",
-    "Structure",
-    "Structure",
-    "Structure"
+    rep("Unnatural Feature", 1),
+    rep("Natural Feature",   3),
+    rep("Evidence",          2),
+    rep("Creature",          2)
+    #rep("Structure",         4)
   )
   
   discovered <- qsample(discovery_types)
   
   if (discovered == "Unnatural Feature") {
-    subtype <- c(
-      rep("Arcane", 9),
-      rep("Planar", 2),
-      "Divine"
-    )
-    subtype_found <- qsample(subtype)
-    
-    if (subtype_found == "Arcane") {
-      core_feature <- qsample(
-        c(
-          rep("residue", 2),
-          rep("blight", 3),
-          rep("alteration/mutation", 2),
-          rep("enchantment", 2),
-          rep("source/repository"),
-        ) 
-      )
-      bonus_features <- paste(roll_details("Alignment"), 
-                              roll_details("Magic Type"), 
-                              sep = ", ")
-    }
-    
-    if (subtype_found == "Planar") {
-      core_feature <- qsample(
-        c(
-          rep("distortion/warp", 4),
-          rep("portal/gate", 4),
-          rep("rift/tear", 2),
-          rep("outpost", 2)
-        ) 
-      )
-      bonus_features <- paste(roll_details("Alignment"), 
-                              roll_details("Element"), 
-                              sep = ", ")
-    }
-    
-    if (subtype_found == "Divine") {
-      core_feature <- qsample(
-        c(
-          rep("mark/sign", 3),
-          rep("cursed place", 3),
-          rep("hallowed place", 3),
-          rep("watched place", 2),
-          rep("presence"),
-        ) 
-      )
-      bonus_features <- paste(roll_details("Alignment"), 
-                              roll_details("Aspect"), 
-                              sep = ", ")
-    }
+    discovery <- roll_unnatural_feature()
   }
   
   if (discovered == "Natural Feature") {
-    
-    subtype <- c(
-      rep("Lair", 2),
-      rep("Obstacle", 2),
-      rep("Terrain Change", 3),
-      rep("Water Feature", 2),
-      rep("Landmark", 2),
-      rep("Resource")
-    )
-    subtype_found <- qsample(subtype)
-    
-    
+    discovery <- roll_natural_feature()
   }
   
-  if (discovered == "Evidence") {}
+  if (discovered == "Evidence") {
+    discovery <- roll_evidence_feature()
+  }
   
-  if (discovered == "Creature") {}
+  if (discovered == "Creature") {
+    discovery <- roll_creature()
+  }
   
-  if (discovered == "Structure") {}
+  if (discovered == "Structure") {
+    discovery <- roll_structure()
+  }
   
-  
+  return(c(list("Type" = discovered), discovery))
 }
