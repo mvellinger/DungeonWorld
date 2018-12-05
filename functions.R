@@ -244,9 +244,9 @@ roll_details <- function(roll_table = "Oddity") {
     result <- qsample(
       c(
         rep("Chaotic", 2),
-        rep("Evil", 3),
+        rep("Evil", 4),
         rep("Neutral", 4),
-        rep("Good", 2),
+        rep("Good", 1),
         rep("Lawful", 2)
       )
     )
@@ -980,16 +980,16 @@ roll_beast <- function(creature_category = "random") {
   }
   
   creature_additional_details <- list(
-    "Activity" = roll_details("Activity"),
-    "Disposition" = roll_details("Disposition"),
+    "Activity"      = roll_details("Activity"),
+    "Disposition"   = roll_details("Disposition"),
     "No. Appearing" = roll_details("No. Appearing"),
-    "Size" = roll_details("Size")
+    "Size"          = roll_details("Size")
   )
   
   
   return(
     list(
-      "type"     = "Beast",
+      "creature type"     = "Beast",
       "category" = creature_category,
       "specific" = creature_specific,
       "details"  = creature_additional_details
@@ -1053,13 +1053,13 @@ roll_humanoid <- function(creature_category = "random") {
   creature_additional_details <- c(
     roll_npc(),
     list(
-      "Disposition" = roll_details("Disposition"),
+      "Disposition"   = roll_details("Disposition"),
       "No. Appearing" = roll_details("No. Appearing"))
   )
   
   return(
     list(
-      "type"     = "Humanoid",
+      "creature type"     = "Humanoid",
       "category" = creature_category,
       "specific" = creature_specific,
       "details"  = creature_additional_details
@@ -1068,17 +1068,17 @@ roll_humanoid <- function(creature_category = "random") {
 }
 
 roll_human <- function() {
-  creature_category <- roll_details("Age")
-  creature_specific <- roll_details("Ability")
+  creature_category <- "Human"
+  creature_specific <- "Human"
   creature_additional_details <- c(
     roll_npc(),
-    list("Disposition" = roll_details("Disposition"),
+    list("Disposition"   = roll_details("Disposition"),
          "No. Appearing" = roll_details("No. Appearing"))
   )
   
   return(
     list(
-      "type"     = "Human",
+      "creature type"     = "Human",
       "category" = creature_category,
       "specific" = creature_specific,
       "details"  = creature_additional_details
@@ -1193,7 +1193,7 @@ roll_monster <- function(creature_category = "random") {
   
   return(
     list(
-      "type"     = "Humanoid",
+      "creature type"     = "Humanoid",
       "category" = creature_category,
       "specific" = creature_specific,
       "details"  = creature_additional_details
@@ -1474,8 +1474,8 @@ roll_npc <- function(context = "random") {
       )
     )
     
-    npc_trait <- roll_npc_trait()
-    npc_activity <- roll_details("Activity")
+    npc_trait     <- roll_npc_trait()
+    npc_activity  <- roll_details("Activity")
     npc_alignment <- roll_details("Alignment")
     
   }
@@ -1571,7 +1571,7 @@ roll_unnatural_feature <- function(subtype = "random") {
   subtypes <- c(
     rep("Arcane", 9),
     rep("Planar", 2),
-    "Divine"
+    rep("Divine", 1)
   )
   
   # input validation
@@ -1690,24 +1690,25 @@ roll_natural_feature <- function(subtype = "random") {
         "Creature"   = roll_creature()
       )
     }
-    
-    if (subtype_found == "Obstacle") {
-      core_feature <- qsample(
-        c(
-          rep("difficult ground",     5),
-          rep("cliff/crevasse/chasm", 3),
-          rep("ravine/gorge",         2),
-          rep(roll_details("Oddity"), 2)
-        )
-      )
-      
-      bonus_features <- list(
-        "Optional A" = roll_details("Oddity"),
-        "Optional B" = roll_details("Ruination")
-      )
-    }
-    
   }
+  
+  if (subtype_found == "Obstacle") {
+    core_feature <- qsample(
+      c(
+        rep("difficult ground",     5),
+        rep("cliff/crevasse/chasm", 3),
+        rep("ravine/gorge",         2),
+        rep(roll_details("Oddity"), 2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Optional A" = roll_details("Oddity"),
+      "Optional B" = roll_details("Ruination")
+    )
+  }
+  
+  
   
   if (subtype_found == "Terrain Change") {
     core_feature <- qsample(
@@ -1745,11 +1746,36 @@ roll_natural_feature <- function(subtype = "random") {
   }
   
   if (subtype_found == "Landmark") {
-    #TODO
+    core_feature <- qsample(
+      c(
+        rep("water-based (waterfall, geyser, etc.)", 3),
+        rep("plant-based (ancient tree, giant flowers, etc.)", 3),
+        rep("earth-based (peak, rock formation, crater, etc.", 4),
+        rep(roll_details("Oddity"))
+      )
+    )
+    
+    bonus_features <- list(
+      "Optional A" = roll_details("Adjective"),
+      "Optional B" = roll_details("Oddity")
+    )
   }
   
   if (subtype_found == "Resource") {
-    #TODO
+    core_feature <- qsample(
+      c(
+        rep("game/fruit/vegetable",     4),
+        rep("herb/spice/dye source",    2),
+        rep("timber/stone",             3),
+        rep("ore (copper, iron, etc.)", 2),
+        rep("precious metal/gems",      1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Size"       = roll_details("Size"),
+      "Visibility" = roll_details("Visibility")
+    )
   }
   # subtypes end 
   
@@ -1845,6 +1871,170 @@ roll_evidence_feature <- function(subtype = "random") {
   
 }
 
+roll_structure <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Enigmatic",        1),
+    rep("Infrastructure",   2),
+    rep("Dwelling",         1),
+    rep("Burial/Religious", 2),
+    rep("Steading",         2),
+    rep("Ruin",             4)
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes
+  if (subtype_found == "Enigmatic") {
+    core_feature <- qsample(
+      c(
+        rep("earthworks",           4),
+        rep("megalith",             4),
+        rep("statue/idol/totem",    3),
+        rep(roll_details("Oddity"), 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Age"  = qsample(c("Old", "Ancient", "prehistoric")),
+      "Size" = qsample(c(rep("medium-sized", 6),
+                         rep("large", 2),
+                         "huge")),
+      "Visibility" = roll_details("Visibility")
+    )
+  }
+  
+  if (subtype_found == "Infrastructure") {
+    core_feature <- qsample(
+      c(
+        rep("track/path",            4),
+        rep("road",                  4),
+        rep("bridge/ford",           2),
+        rep("mine/quarry",           1),
+        rep("aqueduct/canal/portal", 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(qsample(c("Human", "Humanoid")))
+    )
+  }
+  
+  if (subtype_found == "Dwelling") {
+    core_feature <- qsample(
+      c(
+        rep("campsite",          3),
+        rep("hovel/hut",         3),
+        rep("farm",              2),
+        rep("inn/roadhouse",     2),
+        rep("tower/keep/estate", 2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(qsample(c("Human", "Humanoid")))
+    )
+  }
+  
+  if (subtype_found == "Burial/Religious") {
+    core_feature <- qsample(
+      c(
+        rep("grave marker/barrow",  2),
+        rep("graveyard/necropolis", 2),
+        rep("tomb/crypt",           2),
+        rep("shrine",               3),
+        rep("temple/retreat",       2),
+        rep("great temple",         1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(qsample(c("Human", "Humanoid"))),
+      "Alignment"            = roll_details("Alignment"),
+      "Aspect"               = roll_details("Aspect")
+    )
+  }
+  
+  if (subtype_found == "Steading") {
+    core_feature <- qsample(
+      c(
+        roll_steading()
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(qsample(c("Human", "Humanoid")))
+    )
+  }
+  
+  if (subtype_found == "Ruin") {
+    core_feature <- qsample(
+      c(
+        rep(qsample(
+          c(
+            rep("track/path",            4),
+            rep("road",                  4),
+            rep("bridge/ford",           2),
+            rep("mine/quarry",           1),
+            rep("aqueduct/canal/portal", 1)
+          )
+        ), 2),
+        rep(qsample(
+          c(
+            rep("campsite",          3),
+            rep("hovel/hut",         3),
+            rep("farm",              2),
+            rep("inn/roadhouse",     2),
+            rep("tower/keep/estate", 2)
+          )
+        ), 2),
+        rep(qsample(
+          c(
+            rep("grave marker/barrow",  2),
+            rep("graveyard/necropolis", 2),
+            rep("tomb/crypt",           2),
+            rep("shrine",               3),
+            rep("temple/retreat",       2),
+            rep("great temple",         1)
+          )
+        ), 2),
+        rep(roll_steading(), 2),
+        rep(roll_dungeon(),  2)
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(qsample(c("Human", "Humanoid"))),
+      "Age"                  = qsample(c("Old", "Ancient", "prehistoric")),
+      "Ruination"            = roll_details("Ruination"),
+      "Visibility"           = roll_details("Visibility")
+    )
+  }
+  
+  # end subtypes  
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+  
+}
+
+
 roll_discovery <- function() {
   discovery_types <- c(
     rep("Unnatural Feature", 1),
@@ -1878,3 +2068,240 @@ roll_discovery <- function() {
   
   return(c(list("Type" = discovered), discovery))
 }
+
+
+# Danger generation -------------------------------------------------------
+
+roll_danger <- function(danger_type = "random") {
+  
+  danger_types <- c(
+    rep("Unnatural entity", 1),
+    rep("Hazard",           5),
+    rep("Creature",         6)
+  )
+  
+  if(!danger_type %in% c(danger_types, "random")) {
+    stop(paste("invalid feature subtype:", danger_type))
+  }
+  
+  # test for random subtype generation
+  if(danger_type == "random") {
+    danger_type_found <- qsample(danger_types)
+  }else{
+    danger_type_found <- danger_type 
+  }
+  
+  
+  # subtypes
+  if (danger_type_found == "Unnatural entity") {
+    discovery <- roll_unnatural_entity()
+  }
+  
+  if (danger_type_found == "Hazard") {
+    discovery <- roll_hazard()
+  }
+  
+  if (danger_type_found == "Creature") {
+    discovery <- roll_creature()
+  }
+  # end subtypes
+  
+  return(c(list("Type" = danger_type_found), discovery))
+}
+
+roll_unnatural_entity <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Undead", 8),
+    rep("Planar", 3),
+    rep("Divine", 1)
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes
+  if (subtype_found == "Undead") {
+    core_feature <- qsample(
+      c(
+        rep("haunt/wisp",         4),
+        rep("ghost/spectre",      4),
+        rep("banshee",            1),
+        rep("wraith/wight",       2),
+        rep("spirit lord/master", 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Ability"     = roll_details("Ability"),
+      "Activity"    = roll_details("Activity"),
+      "Alignment"   = roll_details("Alignment"),
+      "Disposition" = roll_details("Disposition")
+    )
+  }
+  
+  if (subtype_found == "Planar") {
+    core_feature <- qsample(
+      c(
+        rep("imp (small)",          3),
+        rep("lesser elemental",     3),
+        rep("lesser demon/horror",  3),
+        rep("greater elemental",    1),
+        rep("greater demon/horror", 1),
+        rep("devil/elemental lord", 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Ability"     = roll_details("Ability"),
+      "Activity"    = roll_details("Activity"),
+      "Alignment"   = roll_details("Alignment"),
+      "Disposition" = roll_details("Disposition"),
+      "Element"     = roll_details("Element"),
+      "Feature"     = roll_details("Feature"),
+      "Tag"         = roll_details("Tag")
+    )
+  }
+  
+  if (subtype_found == "Divine") {
+    core_feature <- qsample(
+      c(
+        rep("agent",        5),
+        rep("champion",     4),
+        rep("army (horde)", 2),
+        rep("avatar",       1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Ability"     = roll_details("Ability"),
+      "Activity"    = roll_details("Activity"),
+      "Alignment"   = roll_details("Alignment"),
+      "Aspect"      = roll_details("Aspect"),
+      "Disposition" = roll_details("Disposition"),
+      "Element"     = roll_details("Element"),
+      "Feature"     = roll_details("Feature"),
+      "Tag"         = roll_details("Tag")
+    )
+  }
+  # end subtypes
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+}
+
+
+roll_hazard <- function(subtype = "random") {
+  # list of accepted subtypes
+  subtypes <- c(
+    rep("Unnatural", 2),
+    rep("Natural",   8),
+    rep("Trap",      2)
+  )
+  
+  # input validation
+  if(!subtype %in% c(subtypes, "random")) {
+    stop(paste("invalid feature subtype:", subtype))
+  }
+  
+  # test for random subtype generation
+  if(subtype == "random") {
+    subtype_found <- qsample(subtypes)
+  }else{
+    subtype_found <- subtype 
+  }
+  
+  # subtypes
+  if (subtype_found == "Unnatural") {
+    core_feature <- qsample(
+      c(
+        rep("taint/blight/curse", 3),
+        rep("arcane tra[/effect", 5),
+        rep("planar trap/effect", 3),
+        rep("divine", 1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Aspect"     = roll_details("Aspect"),
+      "Visibility" = roll_details("Visibility")
+    )
+  }
+  
+  if (subtype_found == "Natural") {
+    core_feature <- qsample(
+      c(
+        rep("blinding mist/fog",      2),
+        rep("bog/mire/quicksand",     2),
+        rep("pitfall/sinkhole/chasm", 3),
+        rep("poison/disease",         2),
+        rep("flood/fire/tornado",     2),
+        rep(roll_details("Oddity"),  1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Size" = roll_details("Size")
+    )
+  }
+  
+  if (subtype_found == "Trap") {
+    core_feature <- qsample(
+      c(
+        rep("alarm",                     2),
+        rep("ensnaring/paralyzing",      3),
+        rep("injurious (pitfall, etc.)", 3),
+        rep("gas/fire/poison",           1),
+        rep("ambush",                    1)
+      )
+    )
+    
+    bonus_features <- list(
+      "Creature responsible" = roll_creature(),
+      "Aspect"               = roll_details("Aspect"),
+      "Visibility"           = roll_details("Visibility")
+    )
+  }
+  
+  # end subtypes  
+  
+  # output
+  return(
+    list(
+      "subtype"        = subtype_found,
+      "core feature"   = core_feature,
+      "extra features" = bonus_features
+    )
+  )
+  
+}
+
+# Steading generation -----------------------------------------------------
+
+roll_steading <- function() {
+  
+}
+
+
+
+# Dungeon generation ------------------------------------------------------
+
+roll_dungeon <- function() {
+  
+}
+
