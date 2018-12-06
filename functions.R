@@ -1193,7 +1193,7 @@ roll_monster <- function(creature_category = "random") {
   
   return(
     list(
-      "creature type"     = "Humanoid",
+      "creature type"     = "Monster",
       "category" = creature_category,
       "specific" = creature_specific,
       "details"  = creature_additional_details
@@ -2788,8 +2788,8 @@ discord_dungeon <- function(dungeon) {
 }
 
 discord_creature <- function(creature) {
-  separator_thick = "==================================="
-  separator_thin  = "---------------------------------------------------------"
+  separator_thick = "================================="
+  separator_thin  = "------------------------------------------------------"
   
   basics <- paste(
     separator_thick,
