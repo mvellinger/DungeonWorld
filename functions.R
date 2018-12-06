@@ -1043,7 +1043,7 @@ roll_humanoid <- function(creature_category = "random") {
       c(
         rep("centaur", 2),
         rep("werewolf/werebear", 3),
-        paste0("werecreature (human/", roll_were_creature()),
+        paste0("werecreature (human/", roll_were_creature(), ")"),
         rep(paste("human with", roll_were_creature()),3),
         rep(paste("human with two", paste0(roll_were_creature(), "s")),2)
       )
@@ -2301,7 +2301,530 @@ roll_steading <- function() {
 
 # Dungeon generation ------------------------------------------------------
 
-roll_dungeon <- function() {
+roll_dungeon_theme <- function(type = "random") {
+  
+  # Acceptable type inputs
+  types <- c(
+    rep("Mundane",       5),
+    rep("Unusual",       4),
+    rep("Extraordinary", 3)
+  )
+  
+  # input validation
+  if (!type %in% c(types, "random")) {
+    stop(paste("invalid theme type input:", type))
+  }
+  
+  if (type == "random") {
+    type_found <- qsample(types)
+  }else{
+    type_found <- type
+  }
+  
+  if (type_found == "Mundane") {
+    theme_found <- qsample(
+      c(
+        "rot/decay",
+        "torture/agony",
+        "madness",
+        "all is lost",
+        "noble sacrifice",
+        "savage fury",
+        "survival",
+        "criminal activity",
+        "secrets/treachery",
+        "tricks and traps",
+        "invasion/infestation",
+        "factions at war"
+      )
+    )
+  }
+  
+  if (type_found == "Unusual") {
+    theme_found <- qsample(
+      c(
+        "creation/invention",
+        roll_details("Element"),
+        "knowledge/expansion",
+        "deepening mystery",
+        "transformation/change",
+        "chaos and destruction",
+        "shadowy forces",
+        "forbidden knowledge",
+        "poison/disease",
+        "corruption/blight",
+        "impending disaster"
+      )
+    )
+  }
+  
+  if (type_found == "Extraordinary") {
+    theme_found <- qsample(
+      c(
+        "scheming evil",
+        "divination/scrying",
+        "blasphemy",
+        "arcane research",
+        "occult forces",
+        "an ancient curse",
+        "mutation",
+        "the unquiet dead",
+        "bottomless hunger",
+        "incredible power",
+        "unspeakable horrors",
+        "holy war"
+      )
+    )
+  }
+  
+  return(
+    theme_found
+  )
+}
+
+roll_dungeon_discovery <- function(type = "random") {
+  
+  # Acceptable type inputs
+  types <- c(
+    rep("Dressing",3),
+    rep("Feature", 4),
+    rep("Find",    3)
+  )
+  
+  # input validation
+  if (!type %in% c(types, "random")) {
+    stop(paste("invalid discovery type input:", type))
+  }
+  
+  if (type == "random") {
+    type_found <- qsample(types)
+  }else{
+    type_found <- type
+  }
+  
+  if (type_found == "Dressing") {
+    discovery <- qsample(
+      c(
+        "junk/debris",
+        "tracks/marks",
+        "signs of battle",
+        "writing/carving",
+        "warning",
+        paste("dead", roll_creature()$specific),
+        "bones/remains",
+        "book/scroll/map",
+        "broken door/wall",
+        "breeze/wind/smell",
+        "lichen/moss/fungus",
+        roll_details("Oddity")
+      )
+    )
+  }
+  
+  if (type_found == "Feature") {
+    discovery <- qsample(
+      c(
+        "cave-in/collapse",
+        "pit/shaft/chasm",
+        "locked door/gate",
+        "alcoves/niches",
+        "brdige/stairs/ramp",
+        "fountain/well/pool",
+        "puzzle",
+        "altar/dais/platform",
+        "statue/idol",
+        "magic pool/statue/idol",
+        "connection to another dungeon"
+      )
+    )
+  }
+  
+  if (type_found == "Find") {
+    discovery <- qsample(
+      c(
+        "trinkets",
+        "tools",
+        "weapons/armor",
+        "supplies/trade goods",
+        "coins/gems/jewelry",
+        "poisons/potions",
+        "adventurer/captive",
+        "magic item",
+        "scroll/book",
+        "magic weapon/armor",
+        "artifact",
+        paste(sample(c("trinkets",
+                       "tools",
+                       "weapons/armor",
+                       "supplies/trade goods",
+                       "coins/gems/jewelry",
+                       "poisons/potions",
+                       "adventurer/captive",
+                       "magic item",
+                       "scroll/book",
+                       "magic weapon/armor",
+                       "artifact"), 2), collapse = ", "
+              
+        )
+      )
+    )
+  }
+  
+  return(
+    list(
+      "class" = "Discovery",
+      "type"  = type_found,
+      "details" = discovery
+    )
+    
+  )
+}
+
+roll_dungeon_danger <- function(type = "random") {
+  
+  # Acceptable type inputs
+  types <- c(
+    rep("Trap",     4),
+    rep("Creature", 7),
+    rep("Entity",   1)
+  )
+  
+  # input validation
+  if (!type %in% c(types, "random")) {
+    stop(paste("invalid discovery type input:", type))
+  }
+  
+  if (type == "random") {
+    type_found <- qsample(types)
+  }else{
+    type_found <- type
+  }
+  
+  if (type_found == "Trap") {
+    danger_found <- qsample(
+      c(
+        "alarm",
+        "ensnaring/paralyzing",
+        "pit",
+        "crushing",
+        "piercing/puncturing",
+        "chopping/slashing",
+        "confusing (maze, etc.)",
+        "gas (poison, etc.)",
+        roll_details("Element"),
+        "ambush",
+        paste(qsample(c("alarm",
+                        "ensnaring/paralyzing",
+                        "pit",
+                        "crushing",
+                        "piercing/puncturing",
+                        "chopping/slashing",
+                        "confusing (maze, etc.)",
+                        "gas (poison, etc.)",
+                        roll_details("Element"),
+                        "ambush")), 
+              qsample(c("alarm",
+                        "ensnaring/paralyzing",
+                        "pit",
+                        "crushing",
+                        "piercing/puncturing",
+                        "chopping/slashing",
+                        "confusing (maze, etc.)",
+                        "gas (poison, etc.)",
+                        roll_details("Element"),
+                        "ambush")), sep = ", ")
+      )
+    )
+  }
+  
+  if (type_found == "Creature") {
+    danger_found <- qsample(
+      c(
+        "waiting in ambush   ",
+        "fighting/squabbling",
+        "prowling/on patrol",
+        "looking for food  ",
+        "eating/resting",
+        "guarding",
+        "on the move",
+        "searching/scavenging",
+        "returning to den",
+        "making plans",
+        "sleeping",
+        "dying"
+      )
+    )
+    
+    dungeon_creature <- roll_creature()
+    dungeon_creature$details$Activity <- danger_found
+  }
+  
+  if (type_found == "Entity") {
+    danger_found <- qsample(
+      c(
+        "alien interloper",
+        "vermin lord",
+        "criminal mastermind",
+        "warlord ",
+        "high priest",
+        "oracle",
+        "wizard/witch/alchemist",
+        paste("Monster lord:", roll_creature("Monster")$specific),
+        "evil spirit/ghost ",
+        "undead lord (lich, etc.)",
+        "demon",
+        "dark god"
+      )
+    )
+  }
+  
+  if (type_found != "Creature") {
+    return(
+      list(
+        "class" = "Danger",
+        "type"  = type_found,
+        "details" = danger_found
+      )
+    )
+  }else{
+    return(
+      list(
+        "class" = "Danger",
+        "type"  = type_found,
+        "details" = dungeon_creature
+      )
+    )
+  }
+}
+
+
+roll_dungeon <- function(size = "random") {
+  
+  # Acceptable size inputs
+  sizes <- c(
+    rep("small",  3),
+    rep("medium", 6),
+    rep("large",  2),
+    rep("huge",   1)
+  )
+  
+  # input validation
+  if (!size %in% c(sizes, "random")) {
+    stop(paste("Invalid dungeon size:", size))
+  }
+  
+  # test if random dungeon size was requested (default)
+  if (size == "random") {
+    dungeon_size <- qsample(sizes)
+  }else{
+    dungeon_size <- size
+  }
+  
+  # roll areas and themes
+  if (dungeon_size == "small") {
+    area_count  <- qsample(1:6) + 2
+    theme_count <- qsample(1:4)
+  }
+  
+  if (dungeon_size == "medium") {
+    area_count  <- qsample(1:6) + qsample(1:6) + 2
+    theme_count <- qsample(1:6)
+  }
+  
+  if (dungeon_size == "large") {
+    area_count  <- qsample(1:6) + qsample(1:6) + qsample(1:6) + 2
+    theme_count <- qsample(1:6) + 1
+  }
+  
+  if (dungeon_size == "huge") {
+    area_count  <- qsample(1:6) + qsample(1:6) + qsample(1:6) + qsample(1:6) + 2
+    theme_count <- qsample(1:6) + 2
+  }
+  
+  # Clip theme count if area number too small to support it
+  if (area_count < theme_count) {
+    theme_count <- area_count
+  }
+  
+  dungeon_builder <- qsample(
+    c(
+      rep("aliens/precursors",      1),
+      rep("demigod/demon",          1),
+      rep("natural (caves, etc.)",  2),
+      rep("religious order/cult",   1),
+      rep(roll_humanoid()$specific, 2),
+      rep("dwarves/gnomes",         2),
+      rep("elves",                  1),
+      rep("wizard/madman",          1),
+      rep("monarch/warlord",        1)
+    )
+  )
+  
+  dungeon_function <- qsample(
+    c(
+      rep("source/portal",        1),
+      rep("mine",                 1),
+      rep("tomb/crypt",           2),
+      rep("prison",               1),
+      rep("lair/den/hideout",     2),
+      rep("stronghold/sanctuary", 2),
+      rep("shrine/temple/oracle", 1),
+      rep("archive/library",      1),
+      rep("unknown/mystery",      1)
+    )
+  )
+  
+  dungeon_ruination <- roll_details("Ruination")
+  
+  dungeon_themes <- list()
+  
+  for( i in 1:theme_count) {
+    
+    dungeon_themes[[i]] <- list(
+      "theme" = roll_dungeon_theme(),
+      "countdown" = theme_count
+    )
+    
+    
+  }
+  
+  
+  return(
+    list(
+      "Size"      = dungeon_size,
+      "Builder"   = dungeon_builder,
+      "Function"  = dungeon_function,
+      "Ruination" = dungeon_ruination,
+      "Areas"     = area_count,
+      "Themes"    = dungeon_themes,
+      "Entrance"  = roll_details("Visibility")
+    )
+  )
   
 }
 
+
+# Automatic dungeon exploration -------------------------------------------
+
+explore_dungeon <- function(dungeon = "new") {
+  
+  if (class(dungeon) != "list") {
+    dungeon <- roll_dungeon()
+  }
+  
+  # Theme table
+  theme_table <- data.frame(stringsAsFactors = FALSE)
+  for (p in 1:length(dungeon$Themes)) {
+    added_row <- data.frame(
+      "theme" = dungeon$Themes[[p]]$theme,
+      "count" = dungeon$Themes[[p]]$countdown,
+      stringsAsFactors = FALSE
+    )
+    theme_table <-rbind(theme_table, added_row)
+  }
+  
+  # set up some counters and containers
+  limit <- dungeon$Areas * 2
+  rooms <- list()
+  room_count  <- 1
+  theme_limit <- FALSE
+  
+  while (length(rooms) < limit & theme_limit == FALSE) {
+    grabbed_room <- roll_room()
+    
+    if (grabbed_room$themed == TRUE) {
+      if (sum(theme_table$count > 0)) {
+        grabbed_room$theme <- qsample(theme_table[theme_table$count > 0, 1])
+        theme_table$count[theme_table$theme == grabbed_room$theme] <- theme_table$count[theme_table$theme == grabbed_room$theme] - 1
+        if (sum(theme_table$count) == 0) {
+          theme_limit <- TRUE
+        }
+      }
+    } else {
+      grabbed_room$theme <- "unthemed"
+    }
+    
+    grabbed_room$themed <- NULL
+    rooms[[room_count]] <- grabbed_room
+    room_count <- room_count + 1
+    
+  }
+  
+  return(rooms)
+  
+}
+
+roll_room <- function() {
+  found <- qsample(1:12)
+  
+  finds <- list(
+    list("themed" = FALSE, "area type" = "Common", "contents" = "empty"),
+    list("themed" = FALSE, "area type" = "Common", "contents" = list(roll_dungeon_danger())),
+    list("themed" = FALSE, "area type" = "Common", "contents" = list(roll_dungeon_discovery(), 
+                                                                     roll_dungeon_danger())),
+    list("themed" = FALSE, "area type" = "Common", "contents" = list(roll_dungeon_discovery(), 
+                                                                     roll_dungeon_danger())),
+    list("themed" = FALSE, "area type" = "Common", "contents" = list(roll_dungeon_discovery())),
+    list("themed" = FALSE, "area type" = "Common", "contents" = list(roll_dungeon_discovery())),
+    list("themed" = TRUE,  "area type" = "Common", "contents" = list(roll_dungeon_danger())),
+    list("themed" = TRUE,  "area type" = "Common", "contents" = list(roll_dungeon_danger(), 
+                                                                     roll_dungeon_discovery())),
+    list("themed" = TRUE,  "area type" = "Common", "contents" = list(roll_dungeon_discovery())),
+    list("themed" = TRUE,  "area type" = "Unique", "contents" = list(roll_dungeon_danger())),
+    list("themed" = TRUE,  "area type" = "Unique", "contents" = list(roll_dungeon_danger(), 
+                                                                     roll_dungeon_discovery())),
+    list("themed" = TRUE,  "area type" = "Unique", "contents" = list(roll_dungeon_discovery()))
+  )
+  
+  
+  return(finds[[found]])
+}
+
+
+# Discord formatting ------------------------------------------------------
+
+discord_dungeon <- function(dungeon) {
+  
+}
+
+discord_creature <- function(creature) {
+  separator_thick = "==================================="
+  separator_thin  = "---------------------------------------------------------"
+  
+  basics <- paste(
+    separator_thick,
+    "**MONSTER**",
+    separator_thick,
+    paste0("*",creature$`creature type`, " • " ,creature$category, " • " ,creature$specific, "*"),
+    separator_thin,
+    sep = "\n"
+  )
+  details_names <- names(creature$details)
+  
+  if (any(details_names == "Optional attributes:")) {
+    details_names <- details_names[-which((details_names == "Optional attributes:"))]
+    opt_det <- TRUE
+  }else{
+    opt_det <- FALSE
+  }
+  
+  details_names <- paste0("***", details_names, ":***")
+  
+  detail_print <- vector(mode = "character")
+  for (i in 1:length(details_names)) {
+    detail_print <- c(detail_print, paste(details_names[i], creature$details[[i]]))
+  }
+  
+  detail_print <- paste(c(detail_print, separator_thin) , collapse = "\n")
+  
+  printout <- paste0(basics,"\n", detail_print)
+  
+  if (opt_det == TRUE) {
+    opt_det_names <- names(creature$details$`Optional attributes:`)
+    opt_det_values <- creature$details$`Optional attributes:`
+    printout <- paste0(printout,"\n**Optional Attributes:**\n", 
+                       paste(paste0("***", opt_det_names, ": ***", opt_det_values), collapse = "\n"), "\n",separator_thick)
+  }
+  
+  return(printout)
+}
