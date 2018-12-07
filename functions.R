@@ -192,18 +192,18 @@ roll_details <- function(roll_table = "Oddity") {
   if (roll_table == "Activity") {
     result <- qsample(
       c(
-        "laying a trap/ambush",
-        "fighting/at war",
-        "prowling/on patrol",
-        "hunting/foraging",
-        "eating/resting",
-        "crafting/praying",
-        "traveling/relocating",
-        "exploring/lost",
-        "returning home",
-        "building/excavating",
-        "sleeping",
-        "dying"
+        rep("laying a trap/ambush", 3),
+        rep("fighting/at war",      3),
+        rep("prowling/on patrol",   3),
+        rep("hunting/foraging",     3),
+        rep("eating/resting",       3),
+        rep("crafting/praying",     3),
+        rep("traveling/relocating", 3),
+        rep("exploring/lost",       3),
+        rep("returning home",       3),
+        rep("building/excavating",  3),
+        rep("sleeping",             3),
+        rep("dying",                1)
       )
     )
   }
@@ -387,9 +387,9 @@ roll_details <- function(roll_table = "Oddity") {
   if (roll_table == "No. Appearing") {
     result <- qsample(
       c(
-        rep("Solitary (1)", 5),
-        rep(paste0("Group (", sample(1:6, 1)+2, ")" ), 5),
-        rep(paste0("Horde (", sum(sample(1:6, 4)), " per wave)" ), 2)
+        rep("Solitary (1)", 8),
+        rep(paste0("Group (", sample(1:6, 1)+2, ")" ), 8),
+        rep(paste0("Horde (", sum(sample(1:6, 4)), " per wave)" ), 1)
       )
     )
   }
@@ -1452,9 +1452,10 @@ roll_npc_trait <- function(trait_category = "random") {
 roll_npc <- function(context = "random") {
   
   if (context == "random") {
-    qsample(
+    context <- qsample(
       c("Wilderness", "Rural", "Urban")
     )
+    
   }
   if (context == "Wilderness") {
     npc_type <- qsample(
@@ -1497,13 +1498,17 @@ roll_npc <- function(context = "random") {
         roll_npc_occupation("Official")
       )
     )
+    
+    npc_trait     <- roll_npc_trait()
+    npc_activity  <- roll_details("Activity")
+    npc_alignment <- roll_details("Alignment")
   }
   
   if (context == "Urban") {
     npc_type <- qsample(
       c(
         "beggar/urchin",
-        "beggar/urching",
+        "beggar/urchin",
         roll_npc_occupation("Criminal"),
         roll_npc_occupation("Commoner"),
         roll_npc_occupation("Commoner"),
@@ -1513,9 +1518,13 @@ roll_npc <- function(context = "random") {
         roll_npc_occupation("Merchant"),
         roll_npc_occupation("Specialist"),
         "militia/soldier/guard",
-        roll_npc_occupation("Official"),
+        roll_npc_occupation("Official")
       )
     )
+    
+    npc_trait     <- roll_npc_trait()
+    npc_activity  <- roll_details("Activity")
+    npc_alignment <- roll_details("Alignment")
     
   }
   
@@ -2784,7 +2793,37 @@ roll_room <- function() {
 # Discord formatting ------------------------------------------------------
 
 discord_dungeon <- function(dungeon) {
+  separator_thick = "================================="
+  separator_thin  = "------------------------------------------------------"
   
+  basics <- paste(
+    separator_thick,
+    "**DUNGEON**",
+    separator_thick,
+    paste0("*", dungeon$Size, " • " , dungeon$Builder, " • " , dungeon$Function, "*"),
+    separator_thin,
+    sep = "\n"
+  )
+  
+  detail_print <- paste(
+    paste("***Entrance:***", dungeon$Entrance),
+    paste("***Ruination:***", dungeon$Ruination),
+    paste("***Area limit:***", dungeon$Areas, "(unique + common)"),
+    separator_thin,
+    sep = "\n"
+  )
+  
+  theme_stuff <- vector(mode = "character")
+  
+    for(i in 1:length(dungeon$Themes)) { 
+      theme_stuff <- c(theme_stuff,
+   paste(" • ", dungeon$Themes[[i]]$theme, paste(rep("**O** ", dungeon$Themes[[i]]$countdown), collapse = "")) )
+    }
+  themes_print <- paste(c(theme_stuff, separator_thick), collapse = "\n")
+  
+  printout <- paste(c(basics, detail_print,"***Themes:***", themes_print), collapse = "\n")
+  
+  return(printout)
 }
 
 discord_creature <- function(creature) {
@@ -2793,7 +2832,7 @@ discord_creature <- function(creature) {
   
   basics <- paste(
     separator_thick,
-    "**MONSTER**",
+    "**CREATURE**",
     separator_thick,
     paste0("*",creature$`creature type`, " • " ,creature$category, " • " ,creature$specific, "*"),
     separator_thin,

@@ -36,3 +36,4 @@ vignettes/*.pdf
 rsconnect/
 
 \.~lock\.names\.csv#
+.Rproj.user
